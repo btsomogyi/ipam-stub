@@ -1,4 +1,4 @@
-##IPAM Exercise
+## IPAM Exercise
 
 Based on specification provided [here](https://gist.github.com/mdlayher/a799a98899855399ed999431a66d1b12)
 
