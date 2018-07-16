@@ -26,8 +26,10 @@ public class IpamServer {
 
     static final int LISTENPORT = 9000;
 
-    static final int SUCCESS = 200;
-    static final int INVALIDPARAMTER = 422;
+    static final int CODE_SUCCESS = 200;
+    static final int CODE_INVALIDMETHOD = 400;
+    static final int CODE_INVALIDPARAMETER = 422;
+    static final int CODE_SERVERERRROR = 500;
 
     static IpamRepo repo;
 
@@ -40,11 +42,10 @@ public class IpamServer {
         public void handle(HttpExchange exchange) {
             try {
 
-                // Pretend logging
+                // Pretend server connection logging
                 System.err.println("exchange.getRemoteAddress()" + exchange.getRemoteAddress());
 
-                //Headers requestHeaders = exchange.getRequestHeaders();
-
+                // Get exchange data (Method & query parameters)
                 String requestMethod = exchange.getRequestMethod();
                 Optional<String> requestQuery = Optional.ofNullable(exchange.getRequestURI().getQuery());
                 Map<String, String> parameters;
@@ -55,41 +56,37 @@ public class IpamServer {
                     parameters = new HashMap<>();
                 }
 
-
-                JSONObject inputJson;
-
+                /* Prepare response object to carry response data (String) and code (Integer)
+                *  Response.getKey() to retrieve string value, and
+                *  Response.getValue() to retrieve Integer value
+                 */
                 Pair<String, Integer> Response;
 
                 /* Attempt to parse JSON body and send 400 response on illegal JSONException.
                 *  Attempt to process request method if JSON body parses properly.
                  */
+                JSONObject inputJson;
                 try {
-                    System.err.println("Enter try block");
                     inputJson = GetInputBody(exchange);
-                    System.err.println("inputJson.length(): " + inputJson.length());
-                    if(inputJson.length() !=  0) {
-                        System.err.println("inputJson.toString(): " + inputJson.toString());
-                    } else
-                        System.err.println("inputJSon.length() == 0");
 
                     switch (requestMethod) {
                         case "GET":
                             Response = processGetRequest(parameters, inputJson, repo);
-                            System.err.println("processGetRequest: " + Response.toString());
-
                             break;
                         case "POST":
                             Response = processPostRequest(parameters, inputJson, repo);
                             break;
                         default:
-                            Response = new Pair("Invalid HTTP Method" + requestMethod.toString(), new Integer(400));
+                            Response = new Pair("Invalid HTTP Method" + requestMethod.toString(), new Integer(CODE_INVALIDMETHOD));
                     }
                 } catch (JSONException json) {
                     System.err.println("SubnetHandler: caught JSONException: " + json.getMessage());
-                    Response = new Pair("Invalid JSON Body:" + json.getMessage(), new Integer(400));
+                    Response = new Pair("Invalid JSON Body:" + json.getMessage(), new Integer(CODE_INVALIDMETHOD));
                 }
 
+                // Successfully parsed and processed request, not process Response object
                 try {
+
                     String type;
                     if (Response.getValue() >= 300)
                         type = "TXT";
@@ -104,6 +101,7 @@ public class IpamServer {
 
             }  catch (Exception e) {
                 System.err.println("SubnetHandler caught exception: " + e.getMessage());
+                e.printStackTrace(System.err);
             }
         }
     }
@@ -128,7 +126,7 @@ public class IpamServer {
                         filter = parameters.get(Param);
                         if (filter.isEmpty()) {
                             response.append("Empty family parameter");
-                            code = INVALIDPARAMTER;
+                            code = CODE_INVALIDPARAMETER;
                         } else {
                             switch (filter) {
                                 case "4":
@@ -144,13 +142,13 @@ public class IpamServer {
                                 default:
                                     response.append("Invalid family parameter: " + filter.toString());
                                     response.append("\n\rExpected one of '4' or '6'");
-                                    code = INVALIDPARAMTER;
+                                    code = CODE_INVALIDPARAMETER;
                             }
                         }
                         break;
                     default:
                         response.append("Invalid query parameter:" + Param.toString() + "\n\r");
-                        code = INVALIDPARAMTER;
+                        code = CODE_INVALIDPARAMETER;
                 }
             }
         }
@@ -158,17 +156,12 @@ public class IpamServer {
         // if code is null, no parameter errors have occurred, so continue processing
         List<IpamRecord> Result;
 
-        System.err.println("processGetRequest: code = " + code);
-
         if (code == null) {
             if (requestFilter != null) {
                 Result = target.GetAllSubnets(requestFilter);
             } else {
-                System.err.println("processGetRequest: requestFilter = null");
                 Result = target.GetAllSubnets();
             }
-
-            System.err.println("processGetRequest: " + Result.toString());
 
             JSONArray jsonresults = new JSONArray();
 
@@ -178,7 +171,7 @@ public class IpamServer {
             }
 
             response.append(jsonresults.toString());
-            code = SUCCESS;
+            code = CODE_SUCCESS;
         }
 
         return new Pair(response.toString(), code);
@@ -200,10 +193,9 @@ public class IpamServer {
             switch (Param) {
                 default:
                     response.append("Invalid query parameter:" + Param + "\n\r");
-                    errorCode = INVALIDPARAMTER;
+                    errorCode = CODE_INVALIDPARAMETER;
             }
         }
-
 
         Optional<IpamRecord> result;
         Pair<Boolean, String> validatedCidr;  // Pair<is valid, reason if invalid or cidr if valid>
@@ -211,7 +203,12 @@ public class IpamServer {
         /* if code is null, no parameter errors have occurred, and JSON object valid, then
         *  continue processing
          */
-        if (errorCode == null && ValidateJsonSubnet(inputJson)) {
+        if (errorCode != null) {
+            return new Pair(response.toString(), errorCode);
+        } else if (!ValidateJsonSubnet(inputJson)) {
+            response.append("Invalid subnet specification: " + inputJson.toString());
+            errorCode = CODE_INVALIDPARAMETER;
+        } else {
 
             validatedCidr = isValidCIDR(inputJson.get("cidr").toString());
 
@@ -222,21 +219,19 @@ public class IpamServer {
                     // Check that IPAM database update was complete, then parse results
                     if (result.isPresent()) {
                         JSONObject jsonResponse = getJsonObjectFromIpamRecord(result.get());
-
                         response.append(jsonResponse.toString());
-                        errorCode = SUCCESS;
+                        errorCode = CODE_SUCCESS;
                     } else {
                         response.append("Failed to add subnet " + inputJson.toString());
-                        errorCode = 500;
+                        errorCode = CODE_SERVERERRROR;
                     }
                 } catch (IllegalArgumentException e) {
                     throw new RuntimeException("Validated JSON failed to convert to IpamSubnet");
                 }
             } else {
                 response.append("Failed to add subnet " + inputJson.toString());
-                errorCode = 500;
+                errorCode = CODE_SERVERERRROR;
             }
-
         }
 
         return new Pair(response.toString(), errorCode);
@@ -369,7 +364,7 @@ public class IpamServer {
 
         System.out.println("Starting HTTP Server...");
 
-        BackingStore store = BackingStoreMemory.getInstance();
+        BackingStore store = new BackingStoreMemory();
         repo = new IpamRepo(store);
 
         final Executor multi = Executors.newCachedThreadPool();

@@ -103,7 +103,7 @@ public class IpamServerTest {
     }
 
     @Test
-    public void ProcessPostRequestAcceptEmptyMapAndValidJson () {
+    public void ProcessV4PostRequestAcceptEmptyMapAndValidJson () {
 
         Map<String, String> parameters = new HashMap<>();
         JSONObject jo = new JSONObject(validV4SubnetInput);
@@ -118,6 +118,50 @@ public class IpamServerTest {
                 "{\"cidr\":\"192.168.24.0/24\",\"id\":1,\"family\":\"4\"}",
                 result.getKey() );
         Assert.assertEquals("Expected valid response code", new Integer(200), result.getValue());
+    }
+
+    @Test
+    public void ProcessV6PostRequestAcceptEmptyMapAndValidJson () {
+
+        Map<String, String> parameters = new HashMap<>();
+        JSONObject jo = new JSONObject(validV6SubnetInput);
+        Optional<IpamRecord> expected = Optional.of(validV6IpamRecord);
+
+        IpamRepo mockRepo = mock(IpamRepo.class);
+        when(mockRepo.AddSubnet(validV6Subnet)).thenReturn(expected);
+
+        Pair<String, Integer> result = processPostRequest(parameters, jo, mockRepo);
+
+        Assert.assertEquals("Expected successful JSON response",
+                "{\"cidr\":\"1:2:3:4:5:6:7:8/64\",\"id\":1,\"family\":\"6\"}",
+                result.getKey() );
+        Assert.assertEquals("Expected valid response code", new Integer(200), result.getValue());
+    }
+
+    @Test
+    public void ProcessV4PostRequestRejectInvalidJson () {
+
+        String V4BADCIDR1 = "192.168.24.0/64";
+        String invalidV4SubnetInput = "{\"cidr\":\"" + V4BADCIDR1 + "\"}";
+        //IpamSubnet invalidV4Subnet = IpamSubnet.fromCidr(V4BADCIDR1);
+        //IpamRecord invalidV4IpamRecord = new IpamRecord(validV4Subnet, 1);
+
+        Map<String, String> parameters = new HashMap<>();
+        JSONObject jo = new JSONObject(invalidV4SubnetInput);
+        //Optional<IpamRecord> expected = Optional.of(validV6IpamRecord);
+
+        IpamRepo mockRepo = mock(IpamRepo.class);
+        //when(mockRepo.AddSubnet(validV6Subnet)).thenReturn(expected);
+
+        Pair<String, Integer> result = processPostRequest(parameters, jo, mockRepo);
+
+        Assert.assertNotNull(result);
+        Assert.assertNotNull(result.getKey());
+        Assert.assertNotNull(result.getValue());
+        Assert.assertEquals("Expected rejected JSON response",
+                "Invalid subnet specification: {\"cidr\":\"192.168.24.0/64\"}",
+                result.getKey() );
+        Assert.assertEquals("Expected invalid response code", new Integer(422), result.getValue());
     }
 
     @Ignore

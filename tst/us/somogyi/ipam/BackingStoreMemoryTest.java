@@ -19,7 +19,7 @@ public class BackingStoreMemoryTest {
 
     @Test
     public void putSubnetBackingStoreMemory () {
-        BackingStore memStore = BackingStoreMemory.getInstance();
+        BackingStore memStore = new BackingStoreMemory();
 
         Optional<BackingStore.IpamRecord> result = Optional.ofNullable(null);
         Integer id = null;
@@ -40,7 +40,7 @@ public class BackingStoreMemoryTest {
 
     @Test
     public void getSubnetBackingStoreMemory () {
-        BackingStore memStore = BackingStoreMemory.getInstance();
+        BackingStore memStore = new BackingStoreMemory();
 
         Optional<BackingStore.IpamRecord> result = Optional.ofNullable(null);
         Integer id = null;
@@ -61,7 +61,7 @@ public class BackingStoreMemoryTest {
 
     @Test
     public void getAllSubnetsBackingStoreMemory () {
-        BackingStore memStore = BackingStoreMemory.getInstance();
+        BackingStore memStore = new BackingStoreMemory();
 
         Optional<BackingStore.IpamRecord> result1 = Optional.ofNullable(null);
         Optional<BackingStore.IpamRecord> result2 = Optional.ofNullable(null);

@@ -1,30 +1,20 @@
 package us.somogyi.ipam;
 
-//import com.google.common.base.Optional;
-
 import com.google.common.collect.*;
 
 import java.util.*;
 
 public class BackingStoreMemory implements BackingStore {
 
-    private static BackingStoreMemory instance;
-    private static Integer idCount = 1;
+    private Integer idCount = 1;
 
     private final BiMap<IpamSubnet, Integer> repo;
     private final BiMap<Integer, IpamSubnet> revrepo;
 
     // Singleton class
-    private BackingStoreMemory() {
+    public BackingStoreMemory() {
         repo = HashBiMap.create();
         revrepo = repo.inverse();
-    }
-
-    public static synchronized BackingStoreMemory getInstance() {
-        if (instance == null)
-            instance = new BackingStoreMemory();
-
-        return instance;
     }
 
     @Override
@@ -121,7 +111,7 @@ public class BackingStoreMemory implements BackingStore {
 
 
     // Issue a monotonically incrementing unique ID for use in new record.
-    private static Integer allocateId() {
+    private Integer allocateId() {
         Integer allocated;
         synchronized (idCount) {
             allocated = idCount++;
