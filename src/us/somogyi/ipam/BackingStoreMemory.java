@@ -4,9 +4,7 @@ package us.somogyi.ipam;
 
 import com.google.common.collect.*;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 public class BackingStoreMemory implements BackingStore {
 
@@ -100,12 +98,24 @@ public class BackingStoreMemory implements BackingStore {
     @Override
     public List<IpamRecord> queryAllSubnets() {
         List<IpamRecord> response = new ArrayList<>();
+        synchronized (repo) {
+            Set<IpamSubnet> keySet = repo.keySet();
+            for (IpamSubnet key: keySet) {
+                response.add(new IpamRecord(key, repo.get(key)));
+            }
+        }
         return response;
     }
 
     @Override
     public List<IpamRecord> queryAllSubnets(filterSpec spec) {
         List<IpamRecord> response = new ArrayList<>();
+        synchronized (repo) {
+            Set<IpamSubnet> keySet = repo.keySet();
+            for (IpamSubnet key: keySet) {
+                response.add(new IpamRecord(key, repo.get(key)));
+            }
+        }
         return response;
     }
 
@@ -118,4 +128,5 @@ public class BackingStoreMemory implements BackingStore {
         }
         return allocated;
     }
+
 }

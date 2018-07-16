@@ -28,6 +28,7 @@ public class IpamRepo {
             }
         } catch (BackingStoreException e) {
             System.err.println("Encountered BackingStoreException: " + e.getMessage());
+            result = Optional.ofNullable(null);
         }
 
         return result;
@@ -68,7 +69,7 @@ public class IpamRepo {
             result = storage.queryAllSubnets(filter);
         } catch (BackingStoreException e) {
             System.err.println("Encountered BackingStoreException: " + e.getMessage());
-            result = new ArrayList<IpamRecord>();
+            result = new ArrayList<>();
         }
 
         return result;
@@ -81,7 +82,7 @@ public class IpamRepo {
             result = storage.queryAllSubnets();
         } catch (BackingStoreException e) {
             System.err.println("Encountered BackingStoreException: " + e.getMessage());
-            result = new ArrayList<IpamRecord>();
+            result = new ArrayList<>();
         }
 
         return result;

@@ -27,44 +27,44 @@ public class IpamRepoTest {
     public static final String V6CIDR = "1:2:3:4:5:6:7:8/64";
 
     public static final List<IpamRecord> exampleRepoRecords = Arrays.asList(
-            new IpamRecord(new IpamSubnet(V4CIDR1), new Integer(1)),
-            new IpamRecord(new IpamSubnet(V4CIDR2), new Integer(2)),
-            new IpamRecord(new IpamSubnet(V6CIDR), new Integer(3))
+            new IpamRecord(IpamSubnet.fromCidr(V4CIDR1), 1),
+            new IpamRecord(IpamSubnet.fromCidr(V4CIDR2), 2),
+            new IpamRecord(IpamSubnet.fromCidr(V6CIDR), 3)
     );
 
     public static final Optional<IpamRecord> returnedIpamRecord =
-            Optional.ofNullable(new IpamRecord(new IpamSubnet(V4CIDR1), new Integer(1)));
+            Optional.ofNullable(new IpamRecord(IpamSubnet.fromCidr(V4CIDR1), 1));
 
     @Test
     public void AddSubnetsToRepo () throws BackingStoreException {
-        IpamSubnet subnet = new IpamSubnet(V4CIDR1);
+        IpamSubnet subnet = IpamSubnet.fromCidr(V4CIDR1);
         BackingStore mockBackingStore = mock(BackingStore.class);
         IpamRepo repo = new IpamRepo(mockBackingStore);
 
         try {
-            when(mockBackingStore.putSubnet(new IpamSubnet(V4CIDR1))).thenReturn(returnedIpamRecord);
+            when(mockBackingStore.putSubnet(IpamSubnet.fromCidr(V4CIDR1))).thenReturn(returnedIpamRecord);
 
-            Optional<IpamRecord> added = repo.AddSubnet(new IpamSubnet(V4CIDR1));
+            Optional<IpamRecord> added = repo.AddSubnet(IpamSubnet.fromCidr(V4CIDR1));
             Assert.assertTrue("Added subnet expected to equal returned", subnet.equals(added.get().getSubnet()));
         } catch (BackingStoreException e) {
             fail("BackingStoreException:" + e.getMessage());
         }
     }
 
-    @Ignore
+
     @Test
     public void HandleAddSubnetsBackingStoreException () {
-        IpamSubnet subnet = new IpamSubnet(V4CIDR1);
+        IpamSubnet subnet = IpamSubnet.fromCidr(V4CIDR1);
         BackingStore mockBackingStore = mock(BackingStore.class);
         IpamRepo repo = new IpamRepo(mockBackingStore);
 
 
 
         try {
-            when(mockBackingStore.putSubnet(new IpamSubnet(V4CIDR1)))
+            when(mockBackingStore.putSubnet(subnet))
                     .thenThrow(new BackingStoreException("Failed to store new subnet", new IOException()));
 
-            Optional<IpamRecord> added = repo.AddSubnet(new IpamSubnet(V4CIDR1));
+            Optional<IpamRecord> added = repo.AddSubnet(subnet);
             Assert.assertFalse("Expected empty Optional<IpamRecord>", added.isPresent());
         } catch (BackingStoreException e) {
             fail("BackingStoreException uncaught by IpamRepo:" + e.getMessage());

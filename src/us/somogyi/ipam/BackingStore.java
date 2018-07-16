@@ -1,15 +1,16 @@
 package us.somogyi.ipam;
 
+import com.google.common.base.Objects;
+
 import java.util.Optional;
 
 import java.util.List;
-import java.util.Set;
 
 public interface BackingStore {
 
     /* Persisted record of a subnet and its assigned id
      */
-    public class IpamRecord {
+    class IpamRecord {
         final private IpamSubnet subnet;
         final private Integer id;
 
@@ -24,6 +25,25 @@ public interface BackingStore {
 
         public Integer getId() {
             return this.id;
+        }
+
+        @Override
+        public String toString() {
+            return "[" + this.subnet.getCidr() + "," + this.id + "]";
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof IpamRecord)) return false;
+            IpamRecord that = (IpamRecord) o;
+            return Objects.equal(getSubnet(), that.getSubnet()) &&
+                    Objects.equal(getId(), that.getId());
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hashCode(getSubnet(), getId());
         }
     }
 
