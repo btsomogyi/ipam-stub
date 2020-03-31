@@ -1,6 +1,4 @@
-## IPAM Exercise
-
-Based on specification provided [here](https://gist.github.com/mdlayher/a799a98899855399ed999431a66d1b12)
+## IPAM Mock up
 
 ### Basic Features
 - Uses Java HTTP Server for basic front-end
